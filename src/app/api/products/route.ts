@@ -150,9 +150,9 @@ export async function DELETE(request: Request) {
 
     const products = await prisma.product.findMany();
     const withImages = products.map(p => ({
-      ...p,
-      images: p.gallery & p.gallery.length > 0 ? p.gallery : [p.imageUrl]
-    }));
+  ...p,
+  images: p.gallery && p.gallery.length > 0 ? p.gallery : [p.imageUrl],
+}));
     return NextResponse.json({ withImages }, { status: 200 });
   } catch (err) {
     console.error('Error in DELETE /api/products', err);
