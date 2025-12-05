@@ -54,18 +54,19 @@ export const ProductDetailClient: React.FC<Props> = ({ product }) => {
       <div className="grid md:grid-cols-2 gap-6 items-start">
         {/* Large image */}
         <div>
-          <div className="overflow-hidden rounded-3xl bg-white/70 border border-white/80 shadow-sm">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className="w-full h-80 md:h-96 object-cover"
-              onError={e => {
-    const img = e.currentTarget;
-    img.onerror = null;
-    img.src = '/products/placeholder.jpg';
-  }}
-            />
-          </div>
+          <div className="w-full h-80 bg-gray-50 rounded-2xl flex items-center justify-center">
+  <img
+    src={product.imageUrl}
+    alt={product.name}
+    className="max-h-full max-w-full object-contain"
+    onError={e => {
+      const img = e.currentTarget;
+      img.onerror = null;
+      img.src = '/products/placeholder.jpg';
+    }}
+  />
+</div>
+
         </div>
 
         {/* Details + size selection + quantity controls */}

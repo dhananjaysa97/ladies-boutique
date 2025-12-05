@@ -60,40 +60,41 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
     >
       {/* Image & badges */}
       <Link
-        href={`/products/${product.id}`}
-        data-role="open-details"
-        className="relative block overflow-hidden"
-      >
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="h-40 w-full object-cover transition-transform duration-200 group-hover:scale-105"
-          onError={e => {
-            const img = e.currentTarget;
-            img.onerror = null; // prevent infinite loop
-            img.src = '/products/placeholder.jpg';
-          }}
-        />
+  href={`/products/${product.id}`}
+  data-role="open-details"
+  className="relative block overflow-hidden bg-gray-50"
+>
+  <div className="w-full h-40 flex items-center justify-center">
+    <img
+      src={product.imageUrl}
+      alt={product.name}
+      className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
+      onError={e => {
+        const img = e.currentTarget;
+        img.onerror = null;
+        img.src = '/products/placeholder.jpg';
+      }}
+    />
+  </div>
 
-        {/* Number badge for voice commands */}
-        {index != null && (
-          <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-black/70 text-white">
-            {index}
-          </span>
-        )}
+  {index != null && (
+    <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-black/70 text-white">
+      {index}
+    </span>
+  )}
 
-        {/* "Hot"/"New" badges */}
-        {product.isHot && (
-          <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full bg-red-500 text-white">
-            Hot
-          </span>
-        )}
-        {product.isLatest && !product.isHot && (
-          <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full bg-emerald-500 text-white">
-            New
-          </span>
-        )}
-      </Link>
+  {product.isHot && (
+    <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full bg-red-500 text-white">
+      Hot
+    </span>
+  )}
+  {product.isLatest && !product.isHot && (
+    <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full bg-emerald-500 text-white">
+      New
+    </span>
+  )}
+</Link>
+
 
       {/* Text + always-visible controls */}
       <div className="p-3 flex-1 flex flex-col gap-1">

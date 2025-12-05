@@ -242,15 +242,16 @@ export default function AdminProductsPage() {
                 <p className="text-[11px] text-gray-500 mb-1">Preview:</p>
                 <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                   <img
-                    src={previewUrl ?? form.imageUrl}
-                    alt={form.name || 'Product preview'}
-                    className="w-full h-full object-cover"
-                    onError={e => {
-                      const img = e.currentTarget;
-                      img.onerror = null;
-                      img.src = '/products/placeholder.jpg';
-                    }}
-                  />
+  src={previewUrl ?? form.imageUrl}
+  alt={form.name || 'Product preview'}
+  className="max-w-full max-h-full object-contain"
+  onError={e => {
+    const img = e.currentTarget;
+    img.onerror = null;
+    img.src = '/products/placeholder.jpg';
+  }}
+/>
+
                 </div>
               </div>
             )}
