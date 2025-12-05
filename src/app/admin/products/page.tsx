@@ -58,6 +58,55 @@ export default function AdminProductsPage() {
     };
   }, [imageFile]);
 
+  const handleAttachImageToProduct = async () => {
+  if (!imageFile) return;
+  try {
+    setUploading(true);
+
+    const uploadForm = new FormData();
+    uploadForm.append('file', imageFile);
+
+    const uploadRes = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: uploadForm,
+    });
+
+    if (!uploadRes.ok) {
+      console.error('Image upload failed', await uploadRes.text());
+      setUploading(false);
+      return;
+    }
+
+    const { url } = await uploadRes.json();
+
+    // Attach to current product in the form (local state)
+    setForm(prev => {
+      const currentImages = (prev as any).images && (prev as any).images.length
+        ? [...(prev as any).images]
+        : prev.imageUrl
+        ? [prev.imageUrl]
+        : [];
+
+      const updatedImages = [...currentImages, url];
+
+      return {
+        ...prev,
+        imageUrl: prev.imageUrl || url, // if no primary image yet, use this one
+        images: updatedImages,         // for UI / product detail
+        gallery: updatedImages,        // if you use gallery in Prisma
+      } as any;
+    });
+
+    // Clear file selection and preview
+    setImageFile(null);
+    setPreviewUrl(null);
+  } catch (err) {
+    console.error('Error attaching image', err);
+  } finally {
+    setUploading(false);
+  }
+};
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -368,23 +417,45 @@ const primaryImage = finalImages.length > 0 ? finalImages[0] : form.imageUrl;
             />
 
             <label htmlFor="prod-image-file" className="block text-xs mb-1">
-              Or upload image(s)
-            </label>
-            <input
-              id="prod-image-file"
-              type="file"
-              accept="image/*"
-              className="w-full text-xs"
-              onChange={e => {
-                const file = e.target.files?.[0] ?? null;
-                setImageFile(file);
-              }}
-            />
-            {imageFile && (
-              <p className="mt-1 text-[11px] text-gray-500">
-                Selected: {imageFile.name}
-              </p>
-            )}
+    Or upload image file
+  </label>
+  <div className="flex items-center gap-2">
+    <input
+      id="prod-image-file"
+      type="file"
+      accept="image/*"
+      className="text-xs"
+      onChange={e => {
+        const file = e.target.files?.[0] ?? null;
+        setImageFile(file);
+        if (file) {
+          const url = URL.createObjectURL(file);
+          setPreviewUrl(url);
+        } else {
+          setPreviewUrl(null);
+        }
+      }}
+    />
+    <button
+      type="button"
+      onClick={handleAttachImageToProduct}
+      disabled={!imageFile || uploading || !form.id}
+      className="px-3 py-1 rounded-full bg-pink-500 text-white text-xs disabled:opacity-50"
+    >
+      Save image to product
+    </button>
+  </div>
+
+  {/* temporary preview of the file before attach */}
+  {previewUrl && (
+    <div className="mt-2 w-20 h-20 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+      <img
+        src={previewUrl}
+        alt="New image preview"
+        className="max-w-full max-h-full object-contain"
+      />
+    </div>
+  )}
 
             
   {/* Gallery previews with X buttons */}

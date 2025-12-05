@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     // You can customize the path prefix if you want folders
     const blob = await put(`products/${file.name}`, file, {
       access: 'public',
+      allowOverwrite: true,
     });
 
     return NextResponse.json({ url: blob.url }, { status: 200 });
