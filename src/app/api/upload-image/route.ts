@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
 
-// Ensure Node runtime, not edge
 export const runtime = 'nodejs';
 
-// This route accepts a multipart/form-data POST with a "file" field
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -19,17 +17,39 @@ export async function POST(request: Request) {
 
     const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
 
-    // Upload to Vercel Blob
     const blob = await put(fileName, file, {
-      access: 'public', // public URL
+      access: 'public',
     });
 
-    // blob.url is the public URL
     return NextResponse.json({ url: blob.url }, { status: 200 });
   } catch (err) {
     console.error('Error uploading image to Blob:', err);
     return NextResponse.json(
       { error: 'Upload failed' },
+      { status: 500 }
+    );
+  }
+}
+
+// 👇 NEW: delete an image from Blob by URL
+export async function DELETE(request: Request) {
+  try {
+    const { url } = await request.json();
+
+    if (!url) {
+      return NextResponse.json(
+        { error: 'url is required' },
+        { status: 400 }
+      );
+    }
+
+    await del(url);
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err) {
+    console.error('Error deleting image from Blob:', err);
+    return NextResponse.json(
+      { error: 'Delete failed' },
       { status: 500 }
     );
   }

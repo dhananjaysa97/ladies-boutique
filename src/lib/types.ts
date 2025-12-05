@@ -11,4 +11,6 @@ export interface Product {
   color?: string;
   isHot?: boolean;
   isLatest?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }

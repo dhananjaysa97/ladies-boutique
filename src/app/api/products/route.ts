@@ -125,3 +125,30 @@ export async function PUT(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { ids } = await request.json();
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: 'ids array is required' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.product.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    const products = await prisma.product.findMany();
+    return NextResponse.json({ products }, { status: 200 });
+  } catch (err) {
+    console.error('Error in DELETE /api/products', err);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
