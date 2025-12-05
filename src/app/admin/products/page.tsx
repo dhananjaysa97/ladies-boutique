@@ -1,8 +1,6 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-const [imageFile, setImageFile] = useState<File | null>(null);
-const [uploading, setUploading] = useState(false);
 import { Product } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -20,6 +18,8 @@ const emptyProduct: Product = {
 
 export default function AdminProductsPage() {
   const { data: session, status } = useSession();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState<Product>(emptyProduct);
 
