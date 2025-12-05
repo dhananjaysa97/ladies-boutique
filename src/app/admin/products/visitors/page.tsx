@@ -18,7 +18,7 @@ async function getStats() {
   const [daily, weekly, monthly] = await Promise.all([
     prisma.visit.count({ where: { createdAt: { gte: dayAgo } } }),
     prisma.visit.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.visit.count({ where: { gte: monthAgo } }),
+    prisma.visit.count({ where: { createdAt: { gte: monthAgo } } }),
   ]);
 
   const last10 = await prisma.visit.findMany({
