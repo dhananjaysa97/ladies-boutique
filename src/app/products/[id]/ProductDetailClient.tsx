@@ -59,6 +59,11 @@ export const ProductDetailClient: React.FC<Props> = ({ product }) => {
               src={product.imageUrl}
               alt={product.name}
               className="w-full h-80 md:h-96 object-cover"
+              onError={e => {
+    const img = e.currentTarget;
+    img.onerror = null;
+    img.src = '/products/placeholder.jpg';
+  }}
             />
           </div>
         </div>

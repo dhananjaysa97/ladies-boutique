@@ -21,19 +21,23 @@ export async function generateMetadata(
   const title = `${product.name} | Leena's Boutique`;
   const description = product.description.slice(0, 150);
 
+  // ✅ Fallback for empty/missing image URL
+  const imageUrl = product.imageUrl || '/products/placeholder.jpg';
+
   return {
     title,
     description,
     openGraph: {
       title,
       description,
-      images: [{ url: product.imageUrl }],
-      // ❌ removed: type: 'product'
+      images: [{ url: imageUrl }],
+      // (type removed as you already noted)
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images: [imageUrl],
     },
   };
 }
@@ -45,17 +49,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return notFound();
   }
 
+  // ✅ Same fallback here
+  const imageUrl = product.imageUrl || '/products/placeholder.jpg';
+  const productWithFallback = { ...product, imageUrl };
+
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.name,
-    description: product.description,
-    image: [product.imageUrl],
-    category: product.category,
+    name: productWithFallback.name,
+    description: productWithFallback.description,
+    image: [productWithFallback.imageUrl],
+    category: productWithFallback.category,
     offers: {
       '@type': 'Offer',
       priceCurrency: 'USD',
-      price: product.price,
+      price: productWithFallback.price,
       availability: 'https://schema.org/InStock',
     },
   };
@@ -66,7 +74,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      <ProductDetailClient product={product} />
+      {/* ✅ pass the product with a guaranteed imageUrl */}
+      <ProductDetailClient product={productWithFallback} />
     </>
   );
 }
