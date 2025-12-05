@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+const [imageFile, setImageFile] = useState<File | null>(null);
+const [uploading, setUploading] = useState(false);
 import { Product } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -32,11 +34,39 @@ export default function AdminProductsPage() {
   }, [status]);
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+
+  try {
+    setUploading(true);
+
+    let finalImageUrl = form.imageUrl;
+
+    // If a file is selected, upload it to Blob
+    if (imageFile) {
+      const uploadForm = new FormData();
+      uploadForm.append('file', imageFile);
+
+      const uploadRes = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: uploadForm,
+      });
+
+      if (!uploadRes.ok) {
+        console.error('Image upload failed');
+        // You can also show a toast or error text here
+        setUploading(false);
+        return;
+      }
+
+      const uploadData = await uploadRes.json();
+      finalImageUrl = uploadData.url;
+    }
+
     const payload = {
       ...form,
       id: form.id || crypto.randomUUID(),
       price: Number(form.price),
+      imageUrl: finalImageUrl, // use uploaded URL or manual one
     };
 
     const res = await fetch('/api/products', {
@@ -49,8 +79,15 @@ export default function AdminProductsPage() {
       const updated = await res.json();
       setProducts(updated.products);
       setForm(emptyProduct);
+      setImageFile(null);
+    } else {
+      console.error('Failed to save product', await res.text());
     }
-  };
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   const editProduct = (p: Product) => {
     setForm(p);
@@ -148,20 +185,39 @@ export default function AdminProductsPage() {
             />
           </div>
           <div>
-            <label htmlFor="prod-image" className="block text-xs mb-1">
-              Image URL
-            </label>
-            <input
-              id="prod-image"
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              placeholder="Image URL"
-              value={form.imageUrl}
-              onChange={e =>
-                setForm(f => ({ ...f, imageUrl: e.target.value }))
-              }
-              required
-            />
-          </div>
+  <label htmlFor="prod-image" className="block text-xs mb-1">
+    Image URL
+  </label>
+  <input
+    id="prod-image"
+    className="w-full border rounded-lg px-3 py-2 text-sm mb-2"
+    placeholder="Image URL (optional if you upload)"
+    value={form.imageUrl}
+    onChange={e =>
+      setForm(f => ({ ...f, imageUrl: e.target.value }))
+    }
+  />
+
+  <label htmlFor="prod-image-file" className="block text-xs mb-1">
+    Or upload image
+  </label>
+  <input
+    id="prod-image-file"
+    type="file"
+    accept="image/*"
+    className="w-full text-xs"
+    onChange={e => {
+      const file = e.target.files?.[0] ?? null;
+      setImageFile(file);
+    }}
+  />
+  {imageFile && (
+    <p className="mt-1 text-[11px] text-gray-500">
+      Selected: {imageFile.name}
+    </p>
+  )}
+</div>
+
           <div>
             <label htmlFor="prod-color" className="block text-xs mb-1">
               Color
@@ -199,11 +255,13 @@ export default function AdminProductsPage() {
             </label>
           </div>
           <button
-            type="submit"
-            className="mt-2 inline-flex px-4 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 text-sm"
-          >
-            Save Product
-          </button>
+  type="submit"
+  disabled={uploading}
+  className="mt-2 inline-flex px-4 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+>
+  {uploading ? 'Uploading…' : 'Save Product'}
+</button>
+
         </div>
       </form>
       <div className="bg-white/80 backdrop-blur rounded-2xl shadow-sm p-4 border border-white/70 space-y-2">
