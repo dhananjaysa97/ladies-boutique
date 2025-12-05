@@ -8,7 +8,7 @@ body {
 }
 
 .main-shell {
-  @apply flex-1 flex justify-center px-1 py-1;
+  @apply flex-1 flex justify-center px-1 py-1 ;
 }
 
 .main-card {

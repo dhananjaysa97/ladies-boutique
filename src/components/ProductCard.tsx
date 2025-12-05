@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Product, Size } from "@/lib/types";
 import { useCart } from "@/context/CartContext";
@@ -11,6 +12,11 @@ interface Props {
 }
 
 export const ProductCard: React.FC<Props> = ({ product, index }) => {
+  const [mounted, setMounted] = useState(false);   
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { addToCart, updateQuantity, items } = useCart();
 
   // Support multiple images if product.images exists, otherwise fall back to imageUrl
@@ -246,55 +252,59 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
           
 
       {/* ZOOM MODAL – enlarged image with swipe */}
-      {zoomOpen && (
-        <div
-          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+  {zoomOpen && mounted &&
+  createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70"
+      onClick={() => setZoomOpen(false)}
+    >
+      <div
+        className="relative w-full max-w-3xl max-h-[90vh] mx-4 bg-black rounded-2xl overflow-hidden flex items-center justify-center"
+        onClick={e => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <button
+          className="absolute top-2 right-2 text-white text-xl px-2"
           onClick={() => setZoomOpen(false)}
+          aria-label="Close image"
         >
-          <div
-            className="relative max-w-3xl max-h-[90vh] bg-black rounded-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            <button
-              className="absolute top-2 right-2 text-white text-xl px-2"
-              onClick={() => setZoomOpen(false)}
-              aria-label="Close image"
-            >
-              ✕
-            </button>
-            <div className="w-full h-full flex items-center justify-center">
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="max-w-full max-h-[90vh] object-contain cursor-zoom-out"
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  img.onerror = null;
-                  img.src = "/products/placeholder.jpg";
-                }}
-              />
-            </div>
+          ✕
+        </button>
 
-            {images.length > 1 && (
-              <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2">
-                {images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    className={`h-2 w-2 rounded-full ${
-                      idx === activeIndex ? "bg-pink-500" : "bg-gray-400"
-                    }`}
-                    onClick={() => setActiveIndex(idx)}
-                    aria-label={`Show image ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            )}
+        <img
+          src={currentImage}
+          alt={product.name}
+          className="max-w-full max-h-[90vh] object-contain cursor-zoom-out"
+          onError={e => {
+            const img = e.currentTarget;
+            img.onerror = null;
+            img.src = "/products/placeholder.jpg";
+          }}
+        />
+
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2">
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`h-2 w-2 rounded-full ${
+                  idx === activeIndex ? "bg-pink-500" : "bg-gray-400"
+                }`}
+                onClick={() => setActiveIndex(idx)}
+                aria-label={`Show image ${idx + 1}`}
+              />
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+
     </>
   );
 };
