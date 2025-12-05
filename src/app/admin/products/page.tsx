@@ -22,6 +22,7 @@ export default function AdminProductsPage() {
   const [form, setForm] = useState<Product>(emptyProduct);
 
   useEffect(() => {
+    // something
     if (status !== 'authenticated') return;
     (async () => {
       const res = await fetch('/api/products');
