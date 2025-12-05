@@ -10,7 +10,7 @@ export default async function HomePage() {
       <section className="rounded-3xl bg-gradient-to-r from-pink-100/90 via-rose-50 to-amber-50 p-2 flex flex-col md:flex-row gap-6 items-center">
         <div className="flex-1 space-y-3">
           <div className='flex gap-5'>
-            <Image className='flex-none' src="/products/LeenusBoutiqueLogo.jpg" width={100} height={100}/>
+            <Image alt="Glam By Leenas Boutique" className='flex-none' src="/products/LeenusBoutiqueLogo.jpg" width={100} height={100}/>
             <p className="grow text-sm md:text-base text-gray-700 max-w-xl">
             Discover dresses, tops, ethnic wear, and loungewear handpicked for comfort and elegance.
           </p>
