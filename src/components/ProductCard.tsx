@@ -92,7 +92,7 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
   return (
     <>
       <div
-        className="group bg-white/80 backdrop-blur rounded-2xl shadow-sm overflow-hidden flex flex-col border border-white/70"
+        className="group bg-white/80 backdrop-blur rounded-2xl shadow-sm overflow-hidden flex flex-col border-2 border-pink-700"
         data-product-index={index ?? undefined}
       >
         {/* IMAGE – opens modal, does NOT navigate */}
@@ -138,7 +138,7 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
 
           {/* Index badge for voice */}
           {index != null && (
-            <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-black/70 text-white">
+            <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-blue-900 text-white">
               {index}
             </span>
           )}

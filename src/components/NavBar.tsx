@@ -523,7 +523,7 @@ if (
               closeMiniCart();
             }}
           >
-            Leena&apos;s Boutique
+            Glam By Leena's Boutique
           </Link>
 
           {voiceMode !== 'none' && (
@@ -552,6 +552,8 @@ if (
               Voice works best in Chrome/Edge.
             </span>
           )}
+
+          
         </div>
 
         {/* RIGHT SIDE: Desktop nav + cart */}

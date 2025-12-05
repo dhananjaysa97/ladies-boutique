@@ -8,9 +8,9 @@ body {
 }
 
 .main-shell {
-  @apply flex-1 flex justify-center px-4 py-8;
+  @apply flex-1 flex justify-center px-1 py-1;
 }
 
 .main-card {
-  @apply w-full max-w-6xl bg-white/80 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6 md:p-8;
+  @apply w-full max-w-6xl bg-white/80 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-1 md:p-1;
 }
