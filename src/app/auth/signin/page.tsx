@@ -1,10 +1,10 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 
-export default function SignInPage() {
+function SignInInner() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/admin/products';
   const [email, setEmail] = useState('');
@@ -81,5 +81,13 @@ export default function SignInPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-gray-600">Loading sign-in…</p>}>
+      <SignInInner />
+    </Suspense>
   );
 }
