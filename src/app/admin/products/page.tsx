@@ -14,17 +14,20 @@ const emptyProduct: Product = {
   category: '',
   sizes: ['S', 'M', 'L'],
   color: '',
+  isHot: false,
+  isLatest: false,
 };
 
 export default function AdminProductsPage() {
   const { data: session, status } = useSession();
-  const [imageFile, setImageFile] = useState<File | null>(null);
-const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState<Product>(emptyProduct);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Load existing products once when authenticated
   useEffect(() => {
-    // something
     if (status !== 'authenticated') return;
     (async () => {
       const res = await fetch('/api/products');
@@ -33,64 +36,78 @@ const [uploading, setUploading] = useState(false);
     })();
   }, [status]);
 
+  // Build preview URL when a file is selected
+  useEffect(() => {
+    if (!imageFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [imageFile]);
+
   const handleSubmit = async (e: FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setUploading(true);
+    try {
+      setUploading(true);
 
-    let finalImageUrl = form.imageUrl;
+      let finalImageUrl = form.imageUrl;
 
-    // If a file is selected, upload it to Blob
-    if (imageFile) {
-      const uploadForm = new FormData();
-      uploadForm.append('file', imageFile);
+      // If a file is selected, upload it to Vercel Blob first
+      if (imageFile) {
+        const uploadForm = new FormData();
+        uploadForm.append('file', imageFile);
 
-      const uploadRes = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: uploadForm,
-      });
+        const uploadRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: uploadForm,
+        });
 
-      if (!uploadRes.ok) {
-        console.error('Image upload failed');
-        // You can also show a toast or error text here
-        setUploading(false);
-        return;
+        if (!uploadRes.ok) {
+          console.error('Image upload failed');
+          setUploading(false);
+          return;
+        }
+
+        const uploadData = await uploadRes.json();
+        finalImageUrl = uploadData.url;
       }
 
-      const uploadData = await uploadRes.json();
-      finalImageUrl = uploadData.url;
+      const payload = {
+        ...form,
+        id: form.id || crypto.randomUUID(),
+        price: Number(form.price),
+        imageUrl: finalImageUrl,
+      };
+
+      const res = await fetch('/api/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setProducts(updated.products);
+        setForm(emptyProduct);
+        setImageFile(null);
+        setPreviewUrl(null);
+      } else {
+        console.error('Failed to save product', await res.text());
+      }
+    } finally {
+      setUploading(false);
     }
-
-    const payload = {
-      ...form,
-      id: form.id || crypto.randomUUID(),
-      price: Number(form.price),
-      imageUrl: finalImageUrl, // use uploaded URL or manual one
-    };
-
-    const res = await fetch('/api/products', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      const updated = await res.json();
-      setProducts(updated.products);
-      setForm(emptyProduct);
-      setImageFile(null);
-    } else {
-      console.error('Failed to save product', await res.text());
-    }
-  } finally {
-    setUploading(false);
-  }
-};
-
+  };
 
   const editProduct = (p: Product) => {
     setForm(p);
+    setImageFile(null);
+    setPreviewUrl(null);
   };
 
   if (status === 'loading') {
@@ -167,6 +184,7 @@ const [uploading, setUploading] = useState(false);
             />
           </div>
         </div>
+
         <div className="space-y-3">
           <div>
             <label htmlFor="prod-price" className="block text-xs mb-1">
@@ -184,39 +202,59 @@ const [uploading, setUploading] = useState(false);
               required
             />
           </div>
-          <div>
-  <label htmlFor="prod-image" className="block text-xs mb-1">
-    Image URL
-  </label>
-  <input
-    id="prod-image"
-    className="w-full border rounded-lg px-3 py-2 text-sm mb-2"
-    placeholder="Image URL (optional if you upload)"
-    value={form.imageUrl}
-    onChange={e =>
-      setForm(f => ({ ...f, imageUrl: e.target.value }))
-    }
-  />
 
-  <label htmlFor="prod-image-file" className="block text-xs mb-1">
-    Or upload image
-  </label>
-  <input
-    id="prod-image-file"
-    type="file"
-    accept="image/*"
-    className="w-full text-xs"
-    onChange={e => {
-      const file = e.target.files?.[0] ?? null;
-      setImageFile(file);
-    }}
-  />
-  {imageFile && (
-    <p className="mt-1 text-[11px] text-gray-500">
-      Selected: {imageFile.name}
-    </p>
-  )}
-</div>
+          {/* Image URL + file upload + preview */}
+          <div>
+            <label htmlFor="prod-image" className="block text-xs mb-1">
+              Image URL
+            </label>
+            <input
+              id="prod-image"
+              className="w-full border rounded-lg px-3 py-2 text-sm mb-2"
+              placeholder="Image URL (optional if you upload)"
+              value={form.imageUrl}
+              onChange={e =>
+                setForm(f => ({ ...f, imageUrl: e.target.value }))
+              }
+            />
+
+            <label htmlFor="prod-image-file" className="block text-xs mb-1">
+              Or upload image
+            </label>
+            <input
+              id="prod-image-file"
+              type="file"
+              accept="image/*"
+              className="w-full text-xs"
+              onChange={e => {
+                const file = e.target.files?.[0] ?? null;
+                setImageFile(file);
+              }}
+            />
+            {imageFile && (
+              <p className="mt-1 text-[11px] text-gray-500">
+                Selected: {imageFile.name}
+              </p>
+            )}
+
+            {(previewUrl || form.imageUrl) && (
+              <div className="mt-2">
+                <p className="text-[11px] text-gray-500 mb-1">Preview:</p>
+                <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <img
+                    src={previewUrl ?? form.imageUrl}
+                    alt={form.name || 'Product preview'}
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      const img = e.currentTarget;
+                      img.onerror = null;
+                      img.src = '/products/placeholder.jpg';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           <div>
             <label htmlFor="prod-color" className="block text-xs mb-1">
@@ -232,6 +270,7 @@ const [uploading, setUploading] = useState(false);
               }
             />
           </div>
+
           <div className="flex gap-4 text-xs mt-1">
             <label className="flex items-center gap-2">
               <input
@@ -254,16 +293,17 @@ const [uploading, setUploading] = useState(false);
               Hot
             </label>
           </div>
-          <button
-  type="submit"
-  disabled={uploading}
-  className="mt-2 inline-flex px-4 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
->
-  {uploading ? 'Uploading…' : 'Save Product'}
-</button>
 
+          <button
+            type="submit"
+            disabled={uploading}
+            className="mt-2 inline-flex px-4 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {uploading ? 'Uploading…' : 'Save Product'}
+          </button>
         </div>
       </form>
+
       <div className="bg-white/80 backdrop-blur rounded-2xl shadow-sm p-4 border border-white/70 space-y-2">
         <h2 className="font-semibold text-sm">Existing Products</h2>
         {products.map(p => (
@@ -274,7 +314,8 @@ const [uploading, setUploading] = useState(false);
             <div>
               <p className="font-medium text-sm">{p.name}</p>
               <p className="text-xs text-gray-500">
-                {p.category} • ${p.price.toFixed(2)} {p.color && `• ${p.color}`}
+                {p.category} • ${p.price.toFixed(2)}{' '}
+                {p.color && `• ${p.color}`}
               </p>
             </div>
             <button

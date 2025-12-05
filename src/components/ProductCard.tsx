@@ -1,18 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Product } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
 
 interface Props {
   product: Product;
-  index?: number;
+  index?: number; // 1-based index for voice commands / badges
 }
 
 export const ProductCard: React.FC<Props> = ({ product, index }) => {
   const { addToCart, updateQuantity, items } = useCart();
-  const [hovered, setHovered] = useState(false);
 
   const defaultSize =
     product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined;
@@ -58,26 +57,32 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
     <div
       className="group bg-white/80 backdrop-blur rounded-2xl shadow-sm overflow-hidden flex flex-col border border-white/70"
       data-product-index={index ?? undefined}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
-      <div className="relative overflow-hidden">
-        <Link href={`/products/${product.id}`} data-role="open-details">
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="h-40 w-full object-cover transition-transform duration-200 group-hover:scale-105"
-          />
-        </Link>
+      {/* Image & badges */}
+      <Link
+        href={`/products/${product.id}`}
+        data-role="open-details"
+        className="relative block overflow-hidden"
+      >
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="h-40 w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          onError={e => {
+            const img = e.currentTarget;
+            img.onerror = null; // prevent infinite loop
+            img.src = '/products/placeholder.jpg';
+          }}
+        />
 
-        {/* Number badge (for voice commands) */}
+        {/* Number badge for voice commands */}
         {index != null && (
           <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-black/70 text-white">
             {index}
           </span>
         )}
 
-        {/* Badges */}
+        {/* "Hot"/"New" badges */}
         {product.isHot && (
           <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full bg-red-500 text-white">
             Hot
@@ -88,44 +93,9 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
             New
           </span>
         )}
+      </Link>
 
-        {/* Hover / focus controls: + [qty] - (explicit hover state for Safari) */}
-        <div
-          className={`pointer-events-none absolute inset-x-0 bottom-0 transition-all duration-200
-          ${hovered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
-          group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100`}
-        >
-          <div className="pointer-events-auto bg-black/60 text-white text-xs flex items-center justify-center gap-2 px-3 py-2">
-            <button
-              type="button"
-              onClick={handleMinus}
-              className="h-6 w-6 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-sm"
-              aria-label="Decrease quantity"
-            >
-              –
-            </button>
-            <input
-              type="number"
-              min={0}
-              className="w-12 text-center text-[11px] rounded-full bg-white text-black px-1 py-0.5"
-              value={displayQty}
-              onChange={handleInputChange}
-              aria-label="Quantity in cart"
-            />
-            <button
-              type="button"
-              onClick={handlePlus}
-              className="h-6 w-6 flex items-center justify-center rounded-full bg-pink-500 hover:bg-pink-400 text-sm"
-              aria-label="Increase quantity"
-              data-role="add-to-cart"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Text section */}
+      {/* Text + always-visible controls */}
       <div className="p-3 flex-1 flex flex-col gap-1">
         <h3 className="text-sm font-semibold line-clamp-1">{product.name}</h3>
         <p className="text-[11px] uppercase tracking-wide text-gray-500">
@@ -139,12 +109,13 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
         <p className="mt-1 text-xs text-gray-600 line-clamp-2">
           {product.description}
         </p>
+
         <div className="mt-2 flex items-center justify-between">
           <span className="text-sm font-semibold text-pink-700">
             ${product.price.toFixed(2)}
           </span>
 
-          {/* Always-visible controls for mobile / non-hover */}
+          {/* Always-visible quantity controls */}
           <div className="flex items-center gap-2">
             <button
               type="button"
