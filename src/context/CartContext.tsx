@@ -21,22 +21,63 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 const STORAGE_KEY = 'leenas-cart';
 
+// ⏱ 2-day TTL in ms
+const CART_TTL_MS = 2 * 24 * 60 * 60 * 1000;
+
+type StoredCart =
+  | CartItem[] // old format (backward compat)
+  | {
+      items: CartItem[];
+      savedAt: number;
+    };
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Load from localStorage
+  // Load from localStorage with 2-day expiry
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) setItems(JSON.parse(stored));
+    if (!stored) return;
+
+    try {
+      const parsed: StoredCart = JSON.parse(stored);
+
+      // Old format: just an array of items
+      if (Array.isArray(parsed)) {
+        setItems(parsed);
+        return;
+      }
+
+      // New format: { items, savedAt }
+      if (
+        parsed &&
+        Array.isArray(parsed.items) &&
+        typeof parsed.savedAt === 'number'
+      ) {
+        const age = Date.now() - parsed.savedAt;
+        if (age <= CART_TTL_MS) {
+          setItems(parsed.items);
+        } else {
+          // expired
+          window.localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch {
+      // ignore malformed data
+    }
   }, []);
 
-  // Save to localStorage
+  // Save to localStorage with timestamp
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    const payload = {
+      items,
+      savedAt: Date.now(),
+    };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [items]);
 
   const addToCart = (product: Product, size: Size) => {

@@ -23,6 +23,11 @@ export async function generateMetadata(
 
   // ✅ Fallback for empty/missing image URL
   const imageUrl = product.imageUrl || '/products/placeholder.jpg';
+const images = product.images && product.images.length > 0
+  ? product.images
+  : [imageUrl];
+
+const productWithFallback = { ...product, imageUrl, images };
 
   return {
     title,
