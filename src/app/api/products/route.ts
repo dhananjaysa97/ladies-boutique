@@ -1,15 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAllProducts, upsertProduct } from '@/data/products';
-import { Product } from '@/lib/types';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  const products = await getAllProducts();
+  const products = await prisma.product.findMany();
   return NextResponse.json({ products });
-}
-
-export async function PUT(req: NextRequest) {
-  const body = (await req.json()) as Product;
-  const saved = await upsertProduct(body);
-  const products = await getAllProducts();
-  return NextResponse.json({ product: saved, products });
 }
