@@ -66,6 +66,13 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
+    const images: string[] = Array.isArray(body.images) && body.images.length > 0 
+      ? body.images : body.imageUrl ? [body.imageUrl] : [];
+
+      const primaryImage = images.length > 0 ? images[0] : body.imageUrl || '';
+
+      body.gallery = images;
+
     const {
       id,
       name,
@@ -142,7 +149,11 @@ export async function DELETE(request: Request) {
     });
 
     const products = await prisma.product.findMany();
-    return NextResponse.json({ products }, { status: 200 });
+    const withImages = products.map(p => ({
+      ...p,
+      images: p.gallery & p.gallery.length > 0 ? p.gallery : [p.imageUrl]
+    }));
+    return NextResponse.json({ withImages }, { status: 200 });
   } catch (err) {
     console.error('Error in DELETE /api/products', err);
     return NextResponse.json(

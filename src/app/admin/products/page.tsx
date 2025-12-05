@@ -16,6 +16,8 @@ const emptyProduct: Product = {
   color: '',
   isHot: false,
   isLatest: false,
+    gallery: [],
+  images: [],
 };
 
 type SortKey = 'name' | 'price' | 'createdAt';
@@ -62,7 +64,7 @@ export default function AdminProductsPage() {
     try {
       setUploading(true);
 
-      let finalImageUrl = form.imageUrl;
+      let finalImages = form.images && form.images.length > 0 ? [...form.images] : [];
 
       // Upload new image if file selected
       if (imageFile) {
@@ -81,14 +83,19 @@ export default function AdminProductsPage() {
         }
 
         const uploadData = await uploadRes.json();
-        finalImageUrl = uploadData.url;
+        const newUrl = uploadData.url;
+
+  // push the new image into gallery
+  finalImages.push(newUrl);
       }
+const primaryImage = finalImages.length > 0 ? finalImages[0] : form.imageUrl;
 
       const payload = {
         ...form,
         id: form.id || crypto.randomUUID(),
         price: Number(form.price),
-        imageUrl: finalImageUrl,
+        imageUrl: primaryImage,
+        images: finalImages
       };
 
       const res = await fetch('/api/products', {
@@ -113,7 +120,18 @@ export default function AdminProductsPage() {
   };
 
   const editProduct = (p: Product) => {
-    setForm(p);
+    const images =
+    p.gallery && p.gallery.length > 0
+      ? p.gallery
+      : p.imageUrl
+      ? [p.imageUrl]
+      : [];
+
+  setForm({
+    ...p,
+    images,
+    gallery: images,
+  });
     setImageFile(null);
     setPreviewUrl(null);
   };
@@ -350,7 +368,7 @@ export default function AdminProductsPage() {
             />
 
             <label htmlFor="prod-image-file" className="block text-xs mb-1">
-              Or upload image
+              Or upload image(s)
             </label>
             <input
               id="prod-image-file"
@@ -368,23 +386,48 @@ export default function AdminProductsPage() {
               </p>
             )}
 
-            {(previewUrl || form.imageUrl) && (
-              <div className="mt-2">
-                <p className="text-[11px] text-gray-500 mb-1">Preview:</p>
-                <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                  <img
-                    src={previewUrl ?? form.imageUrl}
-                    alt={form.name || 'Product preview'}
-                    className="max-w-full max-h-full object-contain"
-                    onError={e => {
-                      const img = e.currentTarget;
-                      img.onerror = null;
-                      img.src = '/products/placeholder.jpg';
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+            
+  {/* Gallery previews with X buttons */}
+  {form.images && form.images.length > 0 && (
+    <div className="mt-3">
+      <p className="text-[11px] text-gray-500 mb-1">
+        Gallery images (click ✕ to remove):
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {form.images.map((url, idx) => (
+          <div
+            key={url + idx}
+            className="relative w-16 h-16 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center"
+          >
+            <img
+              src={url}
+              alt={`Image ${idx + 1}`}
+              className="max-w-full max-h-full object-contain"
+              onError={e => {
+                const img = e.currentTarget;
+                img.onerror = null;
+                img.src = '/products/placeholder.jpg';
+              }}
+            />
+            <button
+              type="button"
+              className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center"
+              onClick={() =>
+                setForm(f => ({
+                  ...f,
+                  images: f.images?.filter((_, i) => i !== idx) ?? [],
+                  gallery: f.images?.filter((_, i) => i !== idx) ?? [],
+                }))
+              }
+              aria-label="Remove image"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
           </div>
 
           <div>
