@@ -69,8 +69,8 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: lineItems,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chkout/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chkout/cancel`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel`,
     });
 
     console.log('dddd - ', session.success_url, session.cancel_url);
