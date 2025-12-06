@@ -92,10 +92,36 @@ export const NavBar: React.FC = () => {
     router.push('/cart');
   };
 
-  const handleCheckoutFromMiniCart = () => {
-    setMiniCartOpen(false);
-    router.push('/checkout');
-  };
+  const handleCheckoutFromMiniCart = async () => {
+  setMiniCartOpen(false);
+
+  // 1. Build the same payload you use in CartPage
+  const payload = items.map(i => ({
+    name: i.product.name,
+    price: i.product.price,
+    quantity: i.quantity,
+  }));
+
+  // 2. Call the API route (NOT router.push)
+  const res = await fetch('/api/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: payload }),
+  });
+
+  if (!res.ok) {
+    console.error('Checkout failed from mini cart', await res.text());
+    return;
+  }
+
+  const data = await res.json();
+
+  // 3. Redirect to Stripe Checkout
+  if (data.url) {
+    window.location.href = data.url;
+  }
+};
+
 
   // ---------- Voice-command helpers ----------
 

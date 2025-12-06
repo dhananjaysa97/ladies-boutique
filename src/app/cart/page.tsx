@@ -2,9 +2,46 @@
 
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { useState } from 'react';
 
 export default function CartPage() {
   const { items, total, updateQuantity, removeFromCart, clearCart } = useCart();
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!items.length) return;
+    try {
+      setLoading(true);
+
+      const payload = items.map(i => ({
+        name: i.product.name,
+        price: i.product.price,
+        quantity: i.quantity,
+      }));
+
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: payload }),
+      });
+
+      if (!res.ok) {
+        console.error('Checkout failed', await res.text());
+        setLoading(false);
+        return;
+      }
+
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url; // redirect to Stripe Checkout
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Error during checkout', err);
+      setLoading(false);
+    }
+  };
 
   const handlePlus = (product: any, size: any, qty: number) => {
     updateQuantity(product, size, qty + 1);
@@ -178,18 +215,21 @@ export default function CartPage() {
             <span className="font-semibold text-pink-700">
               ${total.toFixed(2)}
             </span>
+            
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Link
-          href="/checkout"
-          className="inline-flex items-center px-5 py-2 rounded-full bg-pink-500 text-white text-sm hover:bg-pink-600"
+<button
+          type="button"
+          onClick={handleCheckout}
+          disabled={!items.length || loading}
+          className="px-5 py-2 rounded-full bg-pink-500 text-white text-sm disabled:opacity-60"
         >
-          Proceed to checkout
-        </Link>
-      </div>
+          {loading ? 'Redirecting…' : 'Checkout'}
+        </button>
+        
+      
     </section>
   );
 }
