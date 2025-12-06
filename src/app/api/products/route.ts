@@ -66,13 +66,6 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const images: string[] = Array.isArray(body.images) && body.images.length > 0 
-      ? body.images : body.imageUrl ? [body.imageUrl] : [];
-
-      const primaryImage = images.length > 0 ? images[0] : body.imageUrl || '';
-
-      body.gallery = images;
-
     const {
       id,
       name,
@@ -83,6 +76,8 @@ export async function PUT(request: Request) {
       sizes,
       isHot,
       isLatest,
+      images,
+      gallery,
       color,
     } = body;
 
@@ -93,37 +88,41 @@ export async function PUT(request: Request) {
       );
     }
 
-    const updated = await prisma.product.upsert({
+    const normalizedImages: string[] =
+      Array.isArray(images) && images.length > 0
+        ? images
+        : Array.isArray(gallery) && gallery.length > 0
+        ? gallery
+        : imageUrl
+        ? [imageUrl]
+        : [];
+
+    const primaryImage =
+      normalizedImages.length > 0 ? normalizedImages[0] : imageUrl || '';
+
+    const data = {
+      name,
+      description,
+      price: Number(price),
+      category,
+      imageUrl: primaryImage,
+      color,
+      isHot: !!isHot,
+      isLatest: !!isLatest,
+      sizes,
+      gallery: normalizedImages,
+    };
+
+    await prisma.product.upsert({
       where: { id },
-      update: {
-        name,
-        description: description ?? '',
-        price: typeof price === 'string' ? parseFloat(price) : price,
-        category,
-        imageUrl,
-        sizes,
-        isHot: !!isHot,
-        isLatest: !!isLatest,
-        color,
-      },
-      create: {
-        id,
-        name,
-        description: description ?? '',
-        price: typeof price === 'string' ? parseFloat(price) : price,
-        category,
-        imageUrl,
-        sizes,
-        isHot: !!isHot,
-        isLatest: !!isLatest,
-        color,
-      },
+      update: data,
+      create: { id, ...data },
     });
 
     // Return full list so your admin page can refresh
     const products = await prisma.product.findMany();
 
-    return NextResponse.json({ product: updated, products }, { status: 200 });
+    return NextResponse.json({ products }, { status: 200 });
   } catch (err) {
     console.error('Error in PUT /api/products', err);
     return NextResponse.json(

@@ -244,7 +244,7 @@ export const ProductDetailClient: React.FC<Props> = ({ product }) => {
         onTouchEnd={handleTouchEnd}
       >
         <button
-          className="absolute top-2 right-2 text-white text-xl px-2"
+          className="absolute top-2 right-2 text-white bg-black text-xl px-2"
           onClick={() => setZoomOpen(false)}
           aria-label="Close image"
         >

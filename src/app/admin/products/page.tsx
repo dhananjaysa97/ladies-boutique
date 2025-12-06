@@ -113,57 +113,46 @@ export default function AdminProductsPage() {
     try {
       setUploading(true);
 
-      let finalImages = form.images && form.images.length > 0 ? [...form.images] : [];
+      let finalImages =
+      form.images && form.images.length > 0
+        ? [...form.images]
+        : form.imageUrl
+        ? [form.imageUrl]
+        : [];
 
-      // Upload new image if file selected
-      if (imageFile) {
-        const uploadForm = new FormData();
-        uploadForm.append('file', imageFile);
-
-        const uploadRes = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: uploadForm,
-        });
-
-        if (!uploadRes.ok) {
-          console.error('Image upload failed');
-          setUploading(false);
-          return;
-        }
-
-        const uploadData = await uploadRes.json();
-        const newUrl = uploadData.url;
-
-  // push the new image into gallery
-  finalImages.push(newUrl);
-      }
-const primaryImage = finalImages.length > 0 ? finalImages[0] : form.imageUrl;
+        const primaryImage =
+      finalImages.length > 0 ? finalImages[0] : form.imageUrl || '';
 
       const payload = {
-        ...form,
-        id: form.id || crypto.randomUUID(),
-        price: Number(form.price),
-        imageUrl: primaryImage,
-        images: finalImages
-      };
+      ...form,
+      id: form.id || crypto.randomUUID(),
+      price: Number(form.price),
+      imageUrl: primaryImage,
+      images: finalImages,
+      gallery: finalImages,
+    };
 
-      const res = await fetch('/api/products', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch('/api/products', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-      if (res.ok) {
-        const updated = await res.json();
-        setProducts(updated.products);
-        setForm(emptyProduct);
-        setImageFile(null);
-        setPreviewUrl(null);
-        setSelectedIds([]);
-      } else {
-        console.error('Failed to save product', await res.text());
-      }
-    } finally {
+    if (!res.ok) {
+      console.error('Failed to save product', await res.text());
+      setUploading(false);
+      return;
+    }
+
+
+    const updated = await res.json();
+    setProducts(updated.products);
+    setForm(emptyProduct);
+    setImageFile(null);
+    setPreviewUrl(null);
+    } catch (err) {
+    console.error('Error saving product', err);
+  } finally {
       setUploading(false);
     }
   };

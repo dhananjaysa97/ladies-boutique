@@ -124,12 +124,12 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
 
           {/* dots under image if multiple images */}
           {images.length > 1 && (
-            <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center gap-1">
+            <div className="absolute top-10 right-2 flex items-center justify-center gap-1">
               {images.map((img, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  className={`h-1.5 w-1.5 rounded-full ${
+                  className={`h-3.5 w-3.5 rounded-full ${
                     idx === activeIndex ? "bg-pink-500" : "bg-gray-300"
                   }`}
                   onClick={(e) => {
@@ -265,7 +265,7 @@ export const ProductCard: React.FC<Props> = ({ product, index }) => {
         onTouchEnd={handleTouchEnd}
       >
         <button
-          className="absolute top-2 right-2 text-white text-xl px-2"
+          className="absolute top-2 right-2 text-white bg-black text-xl px-2"
           onClick={() => setZoomOpen(false)}
           aria-label="Close image"
         >
