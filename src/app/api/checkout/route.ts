@@ -73,6 +73,8 @@ export async function POST(request: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel`,
     });
 
+    console.log('dddd - ', session.success_url, session.cancel_url);
+
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err) {
     console.error('Error creating checkout session', err);
