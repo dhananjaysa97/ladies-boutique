@@ -180,8 +180,6 @@ async function main() {
       update: p,
     });
   }
-
-  console.log('Seeded sample products.');
 }
 
 main()
