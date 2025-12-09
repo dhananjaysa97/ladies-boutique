@@ -1,9 +1,15 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import { Product, Size } from '@/lib/types';
 
-interface CartItem {
+export interface CartItem {
   product: Product;
   size: Size;
   quantity: number;
@@ -19,61 +25,56 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
+
 const STORAGE_KEY = 'leenas-cart';
+const CART_TTL_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 
-// ⏱ 2-day TTL in ms
-const CART_TTL_MS = 2 * 24 * 60 * 60 * 1000;
+interface StoredCartPayload {
+  items: CartItem[];
+  savedAt: number;
+}
 
-type StoredCart =
-  | CartItem[] // old format (backward compat)
-  | {
-      items: CartItem[];
-      savedAt: number;
-    };
+function loadInitialCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+    const parsed = JSON.parse(raw) as StoredCartPayload | CartItem[];
+
+    // backward compatibility if we ever stored just an array
+    if (Array.isArray(parsed)) return parsed;
+
+    if (!parsed.items || typeof parsed.savedAt !== 'number') return [];
+
+    const age = Date.now() - parsed.savedAt;
+    if (age > CART_TTL_MS) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+
+    return parsed.items;
+  } catch (err) {
+    console.error('Failed to read cart from localStorage', err);
+    return [];
+  }
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Load from localStorage with 2-day expiry
+  // Hydrate from localStorage on mount
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
-
-    try {
-      const parsed: StoredCart = JSON.parse(stored);
-
-      // Old format: just an array of items
-      if (Array.isArray(parsed)) {
-        setItems(parsed);
-        return;
-      }
-
-      // New format: { items, savedAt }
-      if (
-        parsed &&
-        Array.isArray(parsed.items) &&
-        typeof parsed.savedAt === 'number'
-      ) {
-        const age = Date.now() - parsed.savedAt;
-        if (age <= CART_TTL_MS) {
-          setItems(parsed.items);
-        } else {
-          // expired
-          window.localStorage.removeItem(STORAGE_KEY);
-        }
-      }
-    } catch {
-      // ignore malformed data
+    const initial = loadInitialCart();
+    if (initial.length) {
+      setItems(initial);
     }
   }, []);
 
-  // Save to localStorage with timestamp
+  // Persist on every change
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const payload = {
+    const payload: StoredCartPayload = {
       items,
       savedAt: Date.now(),
     };
@@ -96,38 +97,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeFromCart = (productId: string, size: Size) => {
     setItems(prev =>
-      prev.filter(i => !(i.product.id === productId && i.size === size))
+      prev.filter(
+        i => !(i.product.id === productId && i.size === size)
+      )
     );
   };
 
-  const updateQuantity = (product: Product, size: Size, quantity: number) => {
-    const safeQty =
-      Number.isFinite(quantity) && !Number.isNaN(quantity)
-        ? Math.max(0, Math.floor(quantity))
-        : 0;
-
-    setItems(prev => {
-      // If 0 or less → remove this line
-      if (safeQty <= 0) {
-        return prev.filter(
-          i => !(i.product.id === product.id && i.size === size)
-        );
-      }
-
-      const existing = prev.find(
-        i => i.product.id === product.id && i.size === size
-      );
-
-      // If not in cart yet → create it with that quantity
-      if (!existing) {
-        return [...prev, { product, size, quantity: safeQty }];
-      }
-
-      // Otherwise update the quantity
-      return prev.map(i =>
-        i === existing ? { ...i, quantity: safeQty } : i
-      );
-    });
+  const updateQuantity = (
+    product: Product,
+    size: Size,
+    quantity: number
+  ) => {
+    const safeQty = Math.max(1, quantity || 1);
+    setItems(prev =>
+      prev.map(i =>
+        i.product.id === product.id && i.size === size
+          ? { ...i, quantity: safeQty }
+          : i
+      )
+    );
   };
 
   const clearCart = () => setItems([]);
@@ -144,7 +132,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
       {children}
     </CartContext.Provider>
   );
-};
+}
 
 export const useCart = () => {
   const ctx = useContext(CartContext);

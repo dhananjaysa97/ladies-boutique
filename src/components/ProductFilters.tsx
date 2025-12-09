@@ -19,13 +19,20 @@ export interface ProductFilterState {
   maxPrice?: number;
 }
 
-interface Props {
+export const defaultProductFilterState: ProductFilterState = {
+  sizes: [],
+  colors: [],
+  minPrice: undefined,
+  maxPrice: undefined,
+};
+
+interface ProductFiltersProps {
   value: ProductFilterState;
   onChange: (value: ProductFilterState) => void;
 }
 
-const allSizes: Size[] = ['XS', 'S', 'M', 'L', 'XL'];
-const allColors: ColorFilter[] = [
+const ALL_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL'];
+const ALL_COLORS: ColorFilter[] = [
   'Black',
   'White',
   'Beige',
@@ -35,7 +42,10 @@ const allColors: ColorFilter[] = [
   'Green',
 ];
 
-export const ProductFilters: React.FC<Props> = ({ value, onChange }) => {
+export const ProductFilters: React.FC<ProductFiltersProps> = ({
+  value,
+  onChange,
+}) => {
   const [minPriceInput, setMinPriceInput] = useState(
     value.minPrice?.toString() ?? ''
   );
@@ -68,93 +78,75 @@ export const ProductFilters: React.FC<Props> = ({ value, onChange }) => {
   const clearFilters = () => {
     setMinPriceInput('');
     setMaxPriceInput('');
-    onChange({ sizes: [], colors: [], minPrice: undefined, maxPrice: undefined });
+    onChange(defaultProductFilterState);
   };
 
   return (
-    <section className="bg-white/80 backdrop-blur rounded-2xl shadow-sm p-4 mb-4 space-y-4 border border-white/70" aria-label="Product filters">
-      <div className="flex flex-wrap gap-6">
-        <div>
-          <p className="font-semibold mb-2 text-sm">Size</p>
-          <div className="flex flex-wrap gap-2">
-            {allSizes.map(size => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => toggleSize(size)}
-                className={`px-3 py-1 text-xs rounded-full border ${
-                  value.sizes.includes(size)
-                    ? 'bg-pink-500 text-white border-pink-500'
-                    : 'bg-white text-gray-700 border-gray-300'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="font-semibold mb-2 text-sm">Color</p>
-          <div className="flex flex-wrap gap-2">
-            {allColors.map(color => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => toggleColor(color)}
-                className={`px-3 py-1 text-xs rounded-full border ${
-                  value.colors.includes(color)
-                    ? 'bg-pink-500 text-white border-pink-500'
-                    : 'bg-white text-gray-700 border-gray-300'
-                }`}
-              >
-                {color}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="font-semibold mb-2 text-sm">Price range ($)</p>
-          <div className="flex items-center gap-2">
-            <label className="sr-only" htmlFor="min-price">
-              Minimum price
-            </label>
+    <section
+      className="flex flex-wrap items-center gap-4 py-2 text-xs md:text-sm"
+      aria-label="Product filters"
+    >
+      {/* Sizes */}
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-gray-700">Sizes:</span>
+        {ALL_SIZES.map(size => (
+          <label key={size} className="inline-flex items-center gap-1">
             <input
-              id="min-price"
-              type="number"
-              placeholder="Min"
-              className="w-20 border rounded-lg px-2 py-1 text-sm"
-              value={minPriceInput}
-              onChange={e => setMinPriceInput(e.target.value)}
+              type="checkbox"
+              className="rounded border-gray-300"
+              checked={value.sizes.includes(size)}
+              onChange={() => toggleSize(size)}
             />
-            <span className="text-xs text-gray-500">to</span>
-            <label className="sr-only" htmlFor="max-price">
-              Maximum price
-            </label>
-            <input
-              id="max-price"
-              type="number"
-              placeholder="Max"
-              className="w-20 border rounded-lg px-2 py-1 text-sm"
-              value={maxPriceInput}
-              onChange={e => setMaxPriceInput(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={applyPrice}
-              className="text-xs px-3 py-1 rounded-full bg-gray-900 text-white"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
+            <span>{size}</span>
+          </label>
+        ))}
       </div>
-      <button
-        type="button"
-        className="text-xs text-gray-500 underline"
-        onClick={clearFilters}
-      >
-        Clear all filters
-      </button>
+
+      {/* Colors */}
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-gray-700">Colors:</span>
+        {ALL_COLORS.map(color => (
+          <label key={color} className="inline-flex items-center gap-1">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300"
+              checked={value.colors.includes(color)}
+              onChange={() => toggleColor(color)}
+            />
+            <span>{color}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* Price range */}
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-gray-700">Price:</span>
+        <input
+          type="number"
+          className="w-16 rounded border px-1 py-0.5 text-xs"
+          placeholder="Min"
+          value={minPriceInput}
+          onChange={e => setMinPriceInput(e.target.value)}
+          onBlur={applyPrice}
+        />
+        <span>-</span>
+        <input
+          type="number"
+          className="w-16 rounded border px-1 py-0.5 text-xs"
+          placeholder="Max"
+          value={maxPriceInput}
+          onChange={e => setMaxPriceInput(e.target.value)}
+          onBlur={applyPrice}
+        />
+
+        <button
+          type="button"
+          className="text-xs text-gray-500 underline ml-2"
+          onClick={clearFilters}
+        >
+          Clear all filters
+        </button>
+      </div>
     </section>
   );
 };

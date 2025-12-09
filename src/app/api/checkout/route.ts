@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     let items: any = body?.items;
 
     // Normalize items into an array
@@ -17,63 +17,55 @@ export async function POST(request: Request) {
       }
     }
 
-    // Normalize each item into { name, price, quantity }
-    const normalized = (items as any[]).map((raw, idx) => {
-      // handle cases where raw might be null/undefined
-      if (!raw || typeof raw !== 'object') {
-        return null;
-      }
+    const lineItems = items
+      .map((raw: any, idx: number) => {
+        // support both:
+        // 1) { name, price, quantity }
+        // 2) { product: { name, price, ... }, quantity }
+        const source = raw.product ?? raw;
 
-      // support both shapes:
-      // 1) { name, price, quantity }
-      // 2) { product: { name, price, ... }, quantity }
-      const source = raw.product ?? raw;
+        const name = source?.name ?? `Item ${idx + 1}`;
+        const priceRaw = source?.price ?? raw.price;
+        const quantityRaw = raw.quantity ?? 1;
 
-      const name = source?.name ?? `Item ${idx + 1}`;
-      const priceRaw = source?.price ?? raw.price;
-      const quantityRaw = raw.quantity ?? 1;
+        const price = Number(priceRaw);
+        const quantity = Number(quantityRaw);
 
-      const price = Number(priceRaw);
-      const quantity = Number(quantityRaw);
+        if (!Number.isFinite(price) || price <= 0) {
+          // skip invalid price items
+          return null;
+        }
 
-      if (!Number.isFinite(price) || price <= 0) {
-        // skip invalid price items
-        return null;
-      }
+        return {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name,
+            },
+            unit_amount: Math.round(price * 100),
+          },
+          quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+        };
+      })
+      .filter(Boolean) as { price_data: any; quantity: number }[];
 
-      return {
-        name: String(name),
-        price,
-        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-      };
-    }).filter(Boolean) as { name: string; price: number; quantity: number }[];
-
-    if (!normalized.length) {
+    if (!lineItems.length) {
       return NextResponse.json(
-        { error: 'No valid items to checkout' },
+        { error: 'No valid items for checkout' },
         { status: 400 }
       );
     }
 
-    const lineItems = normalized.map((item) => ({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: item.name,
-        },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.quantity,
-    }));
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
     const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
       mode: 'payment',
       line_items: lineItems,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel`,
+      success_url: `${baseUrl}/checkout/success`,
+      cancel_url: `${baseUrl}/checkout/cancel`,
     });
-
-    console.log('dddd - ', session.success_url, session.cancel_url);
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err) {

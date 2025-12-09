@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Product, Size } from '@/lib/types';
+import { Product, Size, SavedProduct } from '@/lib/types';
 
 function mapPrismaProduct(p: any): Product {
   return {
@@ -13,7 +13,8 @@ function mapPrismaProduct(p: any): Product {
     color: p.color ?? undefined,
     isHot: p.isHot,
     isLatest: p.isLatest,
-    images: p.gallery && p.gallery.length > 0 ? p.gallery : [p.imageUrl]
+    images: p.gallery && p.gallery.length > 0 ? p.gallery : [p.imageUrl],
+    operationMode: SavedProduct
   }
 }
 

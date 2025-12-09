@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import { MiniCart } from './MiniCart';
 
@@ -121,6 +122,10 @@ export const NavBar: React.FC = () => {
     window.location.href = data.url;
   }
 };
+
+const { data: session } = useSession();
+const isAdmin = session?.user?.email === 'admin@example.com';
+  // or: const isAdmin = session?.user?.role === 'admin';
 
 
   // ---------- Voice-command helpers ----------
@@ -614,6 +619,16 @@ if (
           <Link href="/admin/products" className={navLinkClass('/admin/products')}>
             Admin
           </Link>
+          
+          {isAdmin && (
+  <Link
+    href="/admin/visitors"
+    className="text-xs text-pink-600 hover:underline ml-3"
+  >
+    Visitors
+  </Link>
+)}
+
 
           {/* Cart icon + mini cart (desktop) */}
           <div className="relative ml-2" ref={miniCartRef}>

@@ -14,20 +14,16 @@ export async function generateMetadata(
 
   if (!product) {
     return {
-      title: "Product not found | Leena's Boutique",
+      title: 'Product not found | Leena\'s Boutique',
     };
   }
 
   const title = `${product.name} | Leena's Boutique`;
   const description = product.description.slice(0, 150);
-
-  // ✅ Fallback for empty/missing image URL
-  const imageUrl = product.imageUrl || '/products/placeholder.jpg';
-const images = product.images && product.images.length > 0
-  ? product.images
-  : [imageUrl];
-
-const productWithFallback = { ...product, imageUrl, images };
+  const imageUrl =
+    (product.images && product.images[0]) ||
+    product.imageUrl ||
+    '/products/placeholder.jpg';
 
   return {
     title,
@@ -36,7 +32,6 @@ const productWithFallback = { ...product, imageUrl, images };
       title,
       description,
       images: [{ url: imageUrl }],
-      // (type removed as you already noted)
     },
     twitter: {
       card: 'summary_large_image',
@@ -51,20 +46,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProductById(params.id);
 
   if (!product) {
-    return notFound();
+    notFound();
   }
 
-  // ✅ Same fallback here
-  const imageUrl = product.imageUrl || '/products/placeholder.jpg';
-  const productWithFallback = { ...product, imageUrl };
+  const imageUrl =
+    (product.images && product.images[0]) ||
+    product.imageUrl ||
+    '/products/placeholder.jpg';
+
+  const productWithFallback = {
+    ...product,
+    imageUrl,
+  };
 
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: productWithFallback.name,
     description: productWithFallback.description,
-    image: [productWithFallback.imageUrl],
-    category: productWithFallback.category,
+    image: [imageUrl],
     offers: {
       '@type': 'Offer',
       priceCurrency: 'USD',
@@ -79,7 +79,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      {/* ✅ pass the product with a guaranteed imageUrl */}
       <ProductDetailClient product={productWithFallback} />
     </>
   );

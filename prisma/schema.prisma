@@ -25,7 +25,9 @@ model Product {
 
 model Visit {
   id        String   @id @default(cuid())
-  path      String
   createdAt DateTime @default(now())
+  path      String
+  sessionId String?
+  userAgent String?
 }
 

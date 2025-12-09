@@ -1,12 +1,13 @@
-import { getLatestProducts } from '@/data/products';
-import { ProductGrid } from '@/components/ProductGrid';
+import TrackVisitClient from '@/components/TrackVisitClient';
 import Image from 'next/image';
+import {ProductGrid} from '@/components/ProductGrid';
+import {LatestProducts} from '@/lib/types'
 
 export default async function HomePage() {
-  const latest = await getLatestProducts();
-
+  
   return (
     <div className="space-y-2">
+      <TrackVisitClient />
       <section className="rounded-3xl bg-gradient-to-r from-pink-100/90 via-rose-50 to-amber-50 p-2 flex flex-col md:flex-row gap-6 items-center">
         <div className="flex-1 space-y-3">
           <div className='flex gap-5'>
@@ -44,7 +45,7 @@ export default async function HomePage() {
       </section>
       <section>
         <h2 className="text-2xl font-semibold mb-4 bg-pink-100">Latest Collection</h2>
-        <ProductGrid products={latest} />
+        <ProductGrid mode={LatestProducts} />
       </section>
     </div>
   );
