@@ -1,84 +1,54 @@
 'use client';
 
-import { Size } from '@/lib/types';
-import { useState } from 'react';
+import { Size, ColorFilter, ALL_SIZES, ALL_COLORS, AllProductsMode, defaultProductFilterState } from '@/lib/types';
+import {  useState } from 'react';
+import { useProductsContext } from '@/context/ProductsContext';
 
-export type ColorFilter =
-  | 'Black'
-  | 'White'
-  | 'Beige'
-  | 'Blue'
-  | 'Pink'
-  | 'Red'
-  | 'Green';
-
-export interface ProductFilterState {
-  sizes: Size[];
-  colors: ColorFilter[];
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-export const defaultProductFilterState: ProductFilterState = {
-  sizes: [],
-  colors: [],
-  minPrice: undefined,
-  maxPrice: undefined,
-};
-
-interface ProductFiltersProps {
-  value: ProductFilterState;
-  onChange: (value: ProductFilterState) => void;
-}
-
-const ALL_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL'];
-const ALL_COLORS: ColorFilter[] = [
-  'Black',
-  'White',
-  'Beige',
-  'Blue',
-  'Pink',
-  'Red',
-  'Green',
-];
-
-export const ProductFilters: React.FC<ProductFiltersProps> = ({
-  value,
-  onChange,
-}) => {
+export const ProductFilters  = () => {
+  const { filters, setFilters } = useProductsContext();
   const [minPriceInput, setMinPriceInput] = useState(
-    value.minPrice?.toString() ?? ''
-  );
-  const [maxPriceInput, setMaxPriceInput] = useState(
-    value.maxPrice?.toString() ?? ''
-  );
-
+  filters.minPrice != null ? String(filters.minPrice) : ''
+);
+const [maxPriceInput, setMaxPriceInput] = useState(
+  filters.maxPrice != null ? String(filters.maxPrice) : ''
+);
+  
   const toggleSize = (size: Size) => {
-    const sizes = value.sizes.includes(size)
-      ? value.sizes.filter(s => s !== size)
-      : [...value.sizes, size];
-    onChange({ ...value, sizes });
+    const isSelected = filters.sizes.includes(size);
+    const updatedSize = isSelected 
+    ? filters.sizes.filter(s => s != size)
+    : [...filters.sizes, size]
+
+    setFilters({
+        ...filters,
+        sizes: updatedSize
+      });
   };
 
   const toggleColor = (color: ColorFilter) => {
-    const colors = value.colors.includes(color)
-      ? value.colors.filter(c => c !== color)
-      : [...value.colors, color];
-    onChange({ ...value, colors });
+    const isSelected = filters.colors.includes(color);
+    const updated = isSelected 
+    ? filters.colors.filter(c => c != color)
+    : [...filters.colors, color]
+
+    setFilters({
+        ...filters,
+        colors: updated
+      });
   };
 
   const applyPrice = () => {
-    onChange({
-      ...value,
-      minPrice: minPriceInput ? Number(minPriceInput) : undefined,
-      maxPrice: maxPriceInput ? Number(maxPriceInput) : undefined,
-    });
+    const parsedMin = minPriceInput.trim() === '' ? undefined : Number(minPriceInput);
+  const parsedMax = maxPriceInput.trim() === '' ? undefined : Number(maxPriceInput);
+  setFilters({
+    ...filters,
+    minPrice: parsedMin,
+    maxPrice: parsedMax
+  })
   };
 
   const clearFilters = () => {
-    setMinPriceInput('');
-    setMaxPriceInput('');
-    onChange(defaultProductFilterState);
+    setFilters(defaultProductFilterState);
   };
 
   return (
@@ -94,7 +64,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             <input
               type="checkbox"
               className="rounded border-gray-300"
-              checked={value.sizes.includes(size)}
+              checked={filters.sizes.includes(size)}
               onChange={() => toggleSize(size)}
             />
             <span>{size}</span>
@@ -110,7 +80,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             <input
               type="checkbox"
               className="rounded border-gray-300"
-              checked={value.colors.includes(color)}
+              checked={filters.colors.includes(color)}
               onChange={() => toggleColor(color)}
             />
             <span>{color}</span>

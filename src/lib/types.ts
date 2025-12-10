@@ -35,11 +35,70 @@ export interface ProductsOperations {
 }
 
 export type ProductModes = 'all' | 'hot' | 'latest';
-export const AllProducts : ProductModes = 'all';
-export const HotProducts : ProductModes = 'hot';
-export const LatestProducts : ProductModes = 'latest';
+export const AllProductsMode : ProductModes = 'all';
+export const HotProductsMode : ProductModes = 'hot';
+export const LatestProductsMode : ProductModes = 'latest';
 
 
 export interface ProductGridProps {
   mode?: ProductModes; // optional, default to "all"
+  title: string
 }
+
+export const ALL_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL'];
+
+export type ColorFilter =
+  | 'Black'
+  | 'White'
+  | 'Beige'
+  | 'Blue'
+  | 'Pink'
+  | 'Red'
+  | 'Green';
+
+  export const ALL_COLORS: ColorFilter[] = [
+    'Black',
+    'White',
+    'Beige',
+    'Blue',
+    'Pink',
+    'Red',
+    'Green',
+  ];
+
+
+export interface ProductFilterState {
+  mode: ProductModes;
+  searchTerm: string;
+  sizes: Size[];
+  colors: ColorFilter[];
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export const defaultProductFilterState: ProductFilterState = {
+  mode:AllProductsMode,
+  searchTerm: '',
+  sizes: [],
+  colors: [],
+  minPrice: undefined,
+  maxPrice: undefined,
+};
+
+export interface ProductsContextValue {
+  allProducts: Product[];
+  hotProducts: Product[];
+  latestProducts: Product[];
+  productsMap: Record<string, Product>;
+  productStatus: ProductsStatus;
+
+  filters: ProductFilterState,
+  setFilters: (f: ProductFilterState) => void;
+  filteredProducts: Product[];
+
+  createProduct: (p: Product) => Promise<void>;
+  upsertProduct: (p: Product) => void;
+  removeProduct: (id: string) => void;
+  getProductById: (id: string) => Product | undefined;
+}
+

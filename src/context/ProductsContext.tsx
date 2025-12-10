@@ -9,19 +9,15 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
-import { Product, ProductsStatus } from '@/lib/types';
+import { 
+  Product, 
+  ProductsStatus, 
+  ProductFilterState, 
+  defaultProductFilterState,
+  ProductsContextValue 
+} from '@/lib/types';
 
-interface ProductsContextValue {
-  allProducts: Product[];
-  hotProducts: Product[];
-  latestProducts: Product[];
-  productsMap: Record<string, Product>;
-  productStatus: ProductsStatus;
-  createProduct: (p: Product) => Promise<void>;
-  upsertProduct: (p: Product) => void;
-  removeProduct: (id: string) => void;
-  getProductById: (id: string) => Product | undefined;
-}
+import { upsertProductInList, buildProductsCollections, filterProducts } from './ProductsContextHelper'
 
 const ProductsContext = createContext<ProductsContextValue | undefined>(
   undefined
@@ -32,48 +28,6 @@ interface ProductProviderProps {
   children: ReactNode;
 }
 
-function parseDate(d: string | Date | null | undefined): Date {
-  if (!d) return new Date(0);
-  return d instanceof Date ? d : new Date(d);
-}
-
-// Build derived collections from allProducts
-function buildProductsCollections(products: Product[]) {
-  const productsMap: Record<string, Product> = {};
-
-  for (const p of products) {
-    if (p.id) {
-      productsMap[p.id] = p;
-    }
-  }
-
-  const hotProducts = products.filter(p => p.isHot);
-
-  const latestProducts = products
-    .filter(p => p.isLatest)
-    .slice()
-    .sort(
-      (a, b) =>
-        parseDate(b.createdAt as any).getTime() -
-        parseDate(a.createdAt as any).getTime()
-    );
-
-  return { productsMap, hotProducts, latestProducts };
-}
-
-function upsertProductInList(list: Product[], saved: Product): Product[] {
-  const idx = list.findIndex(x => x.id === saved.id);
-
-  if (idx === -1) {
-    // Add new to front
-    return [saved, ...list];
-  }
-
-  const copy = [...list];
-  copy[idx] = saved;
-  return copy;
-}
-
 export const ProductsProvider: React.FC<ProductProviderProps> = ({
   initialProducts = [],
   children,
@@ -81,6 +35,18 @@ export const ProductsProvider: React.FC<ProductProviderProps> = ({
   const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 1️⃣ First derive map + hot + latest from allProducts
+  const { productsMap, hotProducts, latestProducts } = useMemo(
+    () => buildProductsCollections(allProducts),
+    [allProducts]
+  );
+
+  const [filters, setFilters] = useState<ProductFilterState>(defaultProductFilterState);
+  
+  // 2️⃣ Then derive filteredProducts using selected list + all filters
+  const filteredProducts = useMemo(() => 
+    filterProducts(filters, latestProducts, hotProducts, allProducts)
+    ,[allProducts, filters, hotProducts, latestProducts]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -102,11 +68,6 @@ export const ProductsProvider: React.FC<ProductProviderProps> = ({
       setLoading(false);
     }
   }, []);
-
-  const { productsMap, hotProducts, latestProducts } = useMemo(
-    () => buildProductsCollections(allProducts),
-    [allProducts]
-  );
 
   const getProductById = useCallback(
     (id: string) => productsMap[id],
@@ -167,7 +128,10 @@ export const ProductsProvider: React.FC<ProductProviderProps> = ({
     hotProducts,
     latestProducts,
     productsMap,
+    filters,
     productStatus,
+    filteredProducts,
+    setFilters,
     createProduct,
     upsertProduct,
     removeProduct,

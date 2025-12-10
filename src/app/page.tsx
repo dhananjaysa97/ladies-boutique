@@ -1,7 +1,7 @@
 import TrackVisitClient from '@/components/TrackVisitClient';
 import Image from 'next/image';
 import {ProductGrid} from '@/components/ProductGrid';
-import {LatestProducts} from '@/lib/types'
+import {LatestProductsMode} from '@/lib/types'
 
 export default async function HomePage() {
   
@@ -44,8 +44,7 @@ export default async function HomePage() {
         </div>
       </section>
       <section>
-        <h2 className="text-2xl font-semibold mb-4 bg-pink-100">Latest Collection</h2>
-        <ProductGrid mode={LatestProducts} />
+        <ProductGrid mode={LatestProductsMode} title='Latest Collection' />
       </section>
     </div>
   );
