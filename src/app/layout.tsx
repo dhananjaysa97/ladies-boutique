@@ -5,7 +5,7 @@ import { Footer } from '@/components/Footer';
 import { CartProvider } from '@/context/CartContext';
 import { ProductsProvider } from '@/context/ProductsContext';
 import { AuthProvider } from '@/components/AuthProvider';
-import { getLatestProducts } from '@/data/products';
+import { getAllProductsCached } from '@/data/products';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const products = await getLatestProducts();
+  const products = await getAllProductsCached();
 
   return (
     <html lang="en">

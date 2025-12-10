@@ -149,9 +149,13 @@ export const ProductsProvider: React.FC<ProductProviderProps> = ({
   };
 
   useEffect(() => {
-    // If initialProducts came from server, we still refresh client side
-    fetchAll();
-  }, [fetchAll]);
+    if (initialProducts.length === 0) {
+      fetchAll();
+    } else {
+      // if SSR gave us data, ensure loading is false
+      setLoading(false);
+    }
+  }, [initialProducts, fetchAll]);
 
   const productStatus: ProductsStatus = {
     loading,

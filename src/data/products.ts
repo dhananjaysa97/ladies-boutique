@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Product, Size, SavedProduct } from '@/lib/types';
+import { unstable_cache } from 'next/cache';
 
 function mapPrismaProduct(p: any): Product {
   return {
@@ -17,6 +18,11 @@ function mapPrismaProduct(p: any): Product {
     operationMode: SavedProduct
   }
 }
+
+export const getAllProductsCached = unstable_cache(
+  async() => {
+    return getAllProducts()}, ['all-products'], {revalidate: 60}
+);
 
 export async function getAllProducts(): Promise<Product[]> {
   const rows = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } });
