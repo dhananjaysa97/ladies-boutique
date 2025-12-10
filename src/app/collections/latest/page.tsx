@@ -5,6 +5,6 @@ import { LatestProductsMode } from '@/lib/types';
 export default async function LatestPage() {
   
   return (
-    <ProductGrid mode={LatestProductsMode} title='Latest Collection. Fresh styles just added to Leena&apos;s Boutique.' />
+    <ProductGrid mode={LatestProductsMode} title='Latest Collection. Fresh styles just added.' />
   );
 }

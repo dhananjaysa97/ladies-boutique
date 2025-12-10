@@ -17,7 +17,7 @@ import {
   ProductsContextValue 
 } from '@/lib/types';
 
-import { upsertProductInList, buildProductsCollections, filterProducts } from './ProductsContextHelper'
+import { upsertProductInList, buildProductsCollections, applyProductFilters } from './ProductsContextHelper'
 
 const ProductsContext = createContext<ProductsContextValue | undefined>(
   undefined
@@ -45,7 +45,7 @@ export const ProductsProvider: React.FC<ProductProviderProps> = ({
   
   // 2️⃣ Then derive filteredProducts using selected list + all filters
   const filteredProducts = useMemo(() => 
-    filterProducts(filters, latestProducts, hotProducts, allProducts)
+    applyProductFilters(filters, latestProducts, hotProducts, allProducts)
     ,[allProducts, filters, hotProducts, latestProducts]);
 
   const fetchAll = useCallback(async () => {

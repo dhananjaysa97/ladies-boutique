@@ -42,50 +42,55 @@ export function upsertProductInList(list: Product[], saved: Product): Product[] 
   return copy;
 }
 
-export const filterProducts = (filters: ProductFilterState, 
-    latestProducts: Product[], hotProducts: Product[], allProducts: Product[]) : Product[] => {
-    const baseList: Product[] =
-      filters.mode === LatestProductsMode
-        ? latestProducts
-        : filters.mode === HotProductsMode
-        ? hotProducts
-        : allProducts ?? [];
+export const applyProductFilters = (
+  filters: ProductFilterState,
+  latestProducts: Product[],
+  hotProducts: Product[],
+  allProducts: Product[]
+): Product[] => {
+  const baseList: Product[] =
+    filters.mode === LatestProductsMode
+      ? latestProducts
+      : filters.mode === HotProductsMode
+      ? hotProducts
+      : allProducts ?? [];
 
-    const q = filters.searchTerm.trim().toLowerCase();
+  const q = filters.searchTerm.trim().toLowerCase();
 
-    return baseList.filter(p => {
-      // Search text filter
-      if (q) {
-        const name = p.name?.toLowerCase() ?? '';
-        const desc = p.description?.toLowerCase() ?? '';
-        const cat = p.category?.toLowerCase() ?? '';
+  return baseList.filter((p) => {
+    // 1) Search text filter
+    if (q) {
+      const name = p.name?.toLowerCase() ?? '';
+      const desc = p.description?.toLowerCase() ?? '';
+      const cat = p.category?.toLowerCase() ?? '';
 
-        const matchesSearch =
-          name.includes(q) || desc.includes(q) || cat.includes(q);
+      const matchesSearch =
+        name.includes(q) || desc.includes(q) || cat.includes(q);
 
-        if (!matchesSearch) return false;
-      }
+      if (!matchesSearch) return false;
+    }
 
-      // Size filter
-      if (filters.sizes.length > 0) {
-        const hasSize = p.sizes?.some((s: any) => filters.sizes.includes(s));
-        if (!hasSize) return false;
-      }
+    // 2) Size filter
+    if (filters.sizes.length > 0) {
+      const hasSize = p.sizes?.some((s: any) => filters.sizes.includes(s));
+      if (!hasSize) return false;
+    }
 
-      // Color filter
-      if (filters.colors.length > 0) {
-        if (!p.color) return false;
-        const normalized = p.color.toLowerCase();
-        const match = filters.colors.some((c: string) =>
-          normalized.includes(c.toLowerCase())
-        );
-        if (!match) return false;
-      }
+    // 3) Color filter
+    if (filters.colors.length > 0) {
+      if (!p.color) return false;
+      const normalized = p.color.toLowerCase();
+      const match = filters.colors.some((c: string) =>
+        normalized.includes(c.toLowerCase())
+      );
+      if (!match) return false;
+    }
 
-      // Price filter
-      if (filters.minPrice != null && p.price < filters.minPrice) return false;
-      if (filters.maxPrice != null && p.price > filters.maxPrice) return false;
+    // 4) Price filter
+    if (filters.minPrice != null && p.price < filters.minPrice) return false;
+    if (filters.maxPrice != null && p.price > filters.maxPrice) return false;
 
-      return true;
-    })
-}
+    // ✅ Passed all filters
+    return true;
+  });
+};
